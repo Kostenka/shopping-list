@@ -36,6 +36,17 @@
     #category-filter {
       margin-bottom: 15px;
     }
+    .final-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .final-item img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -63,8 +74,7 @@
   </div>
 
   <script>
-    const items = [
-      { id: 'item1', name: 'BON蛋糕', img: 'https://i.postimg.cc/8kh7Hrkx/BON-DAG.jpg', category: '雜貨店' },
+    const items = [{ id: 'item1', name: 'BON蛋糕', img: 'https://i.postimg.cc/8kh7Hrkx/BON-DAG.jpg', category: '雜貨店' },
       { id: 'item2', name: 'Cola蘇打水_6入', img: 'https://i.postimg.cc/hPcf3Pfv/cola-6-DAG.jpg', category: '雜貨店' },
       { id: 'item3', name: 'Crispy麥片', img: 'https://i.postimg.cc/QxmHLGTb/crispy-DAG.jpg', category: '雜貨店' },
       { id: 'item4', name: 'Farine面粉', img: 'https://i.postimg.cc/6pQTtjVN/Farine-DAG.jpg', category: '雜貨店' },
@@ -179,7 +189,8 @@
       if (!cart[id]) cart[id] = { count: 0 };
       cart[id].count = Math.max(0, cart[id].count + delta);
       saveCart();
-      renderList();
+      const countSpan = document.getElementById(`count-${id}`);
+      if (countSpan) countSpan.textContent = cart[id].count;
     }
 
     function confirmSelection() {
@@ -191,13 +202,24 @@
         if (data.count > 0) {
           const item = items.find(i => i.id === id);
           if (!grouped[item.category]) grouped[item.category] = [];
-          grouped[item.category].push(`${item.name} ${data.count}個`);
+          grouped[item.category].push({ ...item, count: data.count });
         }
       });
 
       for (const [category, products] of Object.entries(grouped)) {
         const section = document.createElement('div');
-        section.innerHTML = `<strong>${category}</strong>：${products.join('、')}`;
+        section.innerHTML = `<strong>${category}</strong>`;
+
+        products.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'final-item';
+          row.innerHTML = `
+            <img src="${p.img}" alt="${p.name}">
+            <div>${p.name} ${p.count}個</div>
+          `;
+          section.appendChild(row);
+        });
+
         finalList.appendChild(section);
       }
 
