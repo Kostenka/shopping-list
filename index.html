@@ -27,8 +27,16 @@
       width: 30px;
       height: 30px;
     }
-    .controls span {
+    .controls input[type="number"] {
+      width: 50px;
+      text-align: center;
       margin: 0 10px;
+      -moz-appearance: textfield;
+    }
+    .controls input::-webkit-outer-spin-button,
+    .controls input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
     #confirm-section, #final-list-section {
       margin-top: 20px;
@@ -65,6 +73,7 @@
 
   <div id="confirm-section">
     <button onclick="confirmSelection()">✅ 確定購物項目</button>
+    <button onclick="clearCart()">🗑️ 清空全部</button>
   </div>
 
   <div id="final-list-section" style="display:none">
@@ -147,10 +156,11 @@
       { id: 'item71', name: '馬蘇里拉奶酪', img: 'https://i.postimg.cc/wT7kMVQD/馬蘇里拉奶酪_MAD.jpg', category: '肉品與乳製店' },
       { id: 'item72', name: '馬鈴薯袋裝', img: 'https://i.postimg.cc/dQWBJXrq/馬鈴薯袋_DAG.jpg', category: '雜貨店' },
       { id: 'item73', name: '鹽', img: 'https://i.postimg.cc/FsM0RQRQ/鹽_DAG.jpg', category: '雜貨店' },
-      { id: 'item70', name: 'chokipik麥片', img: 'https://i.postimg.cc/y8RXX85d/麥片_chokipik_DAG.jpg', category: '雜貨店' },
-      { id: 'item71', name: '麥片', img: 'https://i.postimg.cc/VNc97cQF/麥片_DAG.jpg', category: '雜貨店' },
-      { id: 'item72', name: '黑烤咖啡', img: 'https://i.postimg.cc/W46GCfsc/DAG.jpg', category: '雜貨店' }
-];
+      { id: 'item74', name: 'chokipik麥片', img: 'https://i.postimg.cc/y8RXX85d/麥片_chokipik_DAG.jpg', category: '雜貨店' },
+      { id: 'item75', name: '麥片', img: 'https://i.postimg.cc/VNc97cQF/麥片_DAG.jpg', category: '雜貨店' },
+      { id: 'item76', name: '黑烤咖啡', img: 'https://i.postimg.cc/W46GCfsc/DAG.jpg', category: '雜貨店' }
+]; // 商品資料略去以節省空間
+
     let cart = JSON.parse(localStorage.getItem('shoppingCart')) || {};
 
     function saveCart() {
@@ -177,7 +187,7 @@
           <div class="item-name">${item.name}</div>
           <div class="controls">
             <button onclick="changeCount('${item.id}', -1)">-</button>
-            <span id="count-${item.id}">${count}</span>
+            <input type="number" id="count-${item.id}" value="${count}" min="0" max="100" oninput="validateAndSet('${item.id}', this)">
             <button onclick="changeCount('${item.id}', 1)">+</button>
           </div>
         `;
@@ -187,10 +197,19 @@
 
     function changeCount(id, delta) {
       if (!cart[id]) cart[id] = { count: 0 };
-      cart[id].count = Math.max(0, cart[id].count + delta);
+      cart[id].count = Math.max(0, Math.min(100, cart[id].count + delta));
       saveCart();
-      const countSpan = document.getElementById(`count-${id}`);
-      if (countSpan) countSpan.textContent = cart[id].count;
+      const input = document.getElementById(`count-${id}`);
+      if (input) input.value = cart[id].count;
+    }
+
+    function validateAndSet(id, input) {
+      let value = input.value.replace(/[^\d]/g, '');
+      let num = Math.max(0, Math.min(100, parseInt(value) || 0));
+      input.value = num;
+      if (!cart[id]) cart[id] = { count: 0 };
+      cart[id].count = num;
+      saveCart();
     }
 
     function confirmSelection() {
@@ -232,6 +251,12 @@
     function completeShopping() {
       localStorage.removeItem('shoppingCart');
       cart = {};
+      renderList();
+    }
+
+    function clearCart() {
+      cart = {};
+      saveCart();
       renderList();
     }
 
