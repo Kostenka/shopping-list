@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>購物清單</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .item img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+    .item-name {
+      width: 120px;
+    }
+    .controls button {
+      width: 30px;
+      height: 30px;
+    }
+    .controls span {
+      margin: 0 10px;
+    }
+    #confirm-section, #final-list-section {
+      margin-top: 20px;
+    }
+    #category-filter {
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="page-title">我的購物清單</h2>
+
+  <label for="category-filter">選擇店家：</label>
+  <select id="category-filter" onchange="renderList()">
+    <option value="全部">全部</option>
+    <option value="雜貨店">雜貨店</option>
+    <option value="水果店">水果店</option>
+    <option value="肉品與乳製店">肉品與乳製店</option>
+    <option value="清潔用品店">清潔用品店</option>
+  </select>
+
+  <div id="list"></div>
+
+  <div id="confirm-section">
+    <button onclick="confirmSelection()">✅ 確定購物項目</button>
+  </div>
+
+  <div id="final-list-section" style="display:none">
+    <h3>🧾 已確認的購物清單</h3>
+    <div id="final-list"></div>
+    <button onclick="completeShopping()">🎉 完成購物</button>
+  </div>
+
+  <script>
+    const items = [
+      { id: 'item1', name: 'BON蛋糕', img: 'https://i.postimg.cc/8kh7Hrkx/BON-DAG.jpg', category: '雜貨店' },
+      { id: 'item2', name: 'cola蘇打水_6盒', img: 'https://i.postimg.cc/hPcf3Pfv/cola-6-DAG.jpg', category: '雜貨店' },
+      { id: 'item3', name: 'crispy麥片', img: 'https://i.postimg.cc/QxmHLGTb/crispy-DAG.jpg', category: '雜貨店' },
+      { id: 'item4', name: 'Farine面粉', img: 'https://i.postimg.cc/6pQTtjVN/Farine-DAG.jpg', category: '雜貨店' },
+      { id: 'item5', name: 'montcuq礦泉水', img: 'https://i.postimg.cc/dVS312nZ/montcuq-DAG.jpg', category: '雜貨店' },
+      { id: 'item6', name: 'Pablo糖粉', img: 'https://i.postimg.cc/nLjzQXwR/Pablo-DAG.jpg', category: '雜貨店' },
+      { id: 'item7', name: 'Paysans牛油', img: 'https://i.postimg.cc/rpBpGqB8/Paysans-DAG.jpg', category: '雜貨店' },
+      { id: 'item8', name: 'pepites蛋糕', img: 'https://i.postimg.cc/63CpYDKC/pepites-DAG.jpg', category: '雜貨店' },
+      { id: 'item9', name: 'SUSU糖粉', img: 'https://i.postimg.cc/kG9XZfMz/SUSU-DAG.jpg', category: '雜貨店' },
+      { id: 'item10', name: 'Zap可樂6入', img: 'https://i.postimg.cc/59qtvdnV/zap-6-DAG.jpg', category: '雜貨店' }
+    ];
+
+    let cart = JSON.parse(localStorage.getItem('shoppingCart')) || {};
+
+    function saveCart() {
+      localStorage.setItem('shoppingCart', JSON.stringify(cart));
+    }
+
+    function renderList() {
+      document.getElementById('page-title').textContent = '我的購物清單';
+      document.getElementById('list').style.display = 'block';
+      document.getElementById('confirm-section').style.display = 'block';
+      document.getElementById('final-list-section').style.display = 'none';
+
+      const listDiv = document.getElementById('list');
+      const selectedCategory = document.getElementById('category-filter').value;
+      listDiv.innerHTML = '';
+      items.filter(item => selectedCategory === '全部' || item.category === selectedCategory)
+           .forEach(item => {
+        const count = cart[item.id]?.count || 0;
+
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <img src="${item.img}" alt="${item.name}">
+          <div class="item-name">${item.name}</div>
+          <div class="controls">
+            <button onclick="changeCount('${item.id}', -1)">-</button>
+            <span id="count-${item.id}">${count}</span>
+            <button onclick="changeCount('${item.id}', 1)">+</button>
+          </div>
+        `;
+        listDiv.appendChild(div);
+      });
+    }
+
+    function changeCount(id, delta) {
+      if (!cart[id]) cart[id] = { count: 0 };
+      cart[id].count = Math.max(0, cart[id].count + delta);
+      saveCart();
+      renderList();
+    }
+
+    function confirmSelection() {
+      const finalList = document.getElementById('final-list');
+      finalList.innerHTML = '';
+
+      const grouped = {};
+      Object.entries(cart).forEach(([id, data]) => {
+        if (data.count > 0) {
+          const item = items.find(i => i.id === id);
+          if (!grouped[item.category]) grouped[item.category] = [];
+          grouped[item.category].push(`${item.name} ${data.count}個`);
+        }
+      });
+
+      for (const [category, products] of Object.entries(grouped)) {
+        const section = document.createElement('div');
+        section.innerHTML = `<strong>${category}</strong>：${products.join('、')}`;
+        finalList.appendChild(section);
+      }
+
+      document.getElementById('list').style.display = 'none';
+      document.getElementById('confirm-section').style.display = 'none';
+      document.getElementById('final-list-section').style.display = 'block';
+      document.getElementById('page-title').textContent = '確認購物清單';
+    }
+
+    function completeShopping() {
+      localStorage.removeItem('shoppingCart');
+      cart = {};
+      renderList();
+    }
+
+    renderList();
+  </script>
+</body>
+</html>
